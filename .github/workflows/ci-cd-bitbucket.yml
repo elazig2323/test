@@ -15,7 +15,7 @@ on:
 
 env:
   REGISTRY: ghcr.io  # oder docker.io für Docker Hub
-  IMAGE_NAME: clubsmarter  # Repository-Name für Docker Images
+  IMAGE_NAME: ${{ github.repository_owner }}/clubsmarter  # Repository-Name für Docker Images
 
 jobs:
   # Backend Build & Test
@@ -45,8 +45,8 @@ jobs:
           pytest --cov=apps --cov-report=html || true
 
       - name: Build Docker image
-        working-directory: ./vereinhub_backend
         run: |
+          cd vereinhub_backend
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} .
 
@@ -93,8 +93,8 @@ jobs:
           flutter build web --release
 
       - name: Build Docker image
-        working-directory: ./vereinshub_portal
         run: |
+          cd vereinshub_portal
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-portal:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-portal:${{ github.sha }} .
 
@@ -141,8 +141,8 @@ jobs:
           flutter build web --release
 
       - name: Build Docker image
-        working-directory: ./vereinshub_admin
         run: |
+          cd vereinshub_admin
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:${{ github.sha }} .
 
@@ -183,14 +183,14 @@ jobs:
           channel: 'stable'
 
       - name: Build Flutter Web (Standard)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter pub get
           flutter build web --release --dart-define=IS_PREMIUM=false
 
       - name: Build Docker image (Standard)
-        working-directory: ./vereinshub_frontend
         run: |
+          cd vereinshub_frontend/vereinshub_frontend
           docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest .
           docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
@@ -233,14 +233,14 @@ jobs:
           channel: 'stable'
 
       - name: Build Flutter Web (Premium)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter pub get
           flutter build web --release --dart-define=IS_PREMIUM=true
 
       - name: Build Docker image (Premium)
-        working-directory: ./vereinshub_frontend
         run: |
+          cd vereinshub_frontend/vereinshub_frontend
           docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest .
           docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
@@ -288,13 +288,13 @@ jobs:
           pod setup
 
       - name: Build Flutter iOS (Standard)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter pub get
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter iOS (Premium)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=true
 
@@ -303,7 +303,7 @@ jobs:
         with:
           name: ios-builds
           path: |
-            vereinshub_frontend/build/ios/iphoneos/Runner.app
+            vereinshub_frontend/vereinshub_frontend/build/ios/iphoneos/Runner.app
           retention-days: 7
 
   # Frontend Android Build
@@ -332,23 +332,23 @@ jobs:
           flutter doctor --android-licenses || true
 
       - name: Build Flutter Android APK (Standard)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter pub get
           flutter build apk --release --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter Android APK (Premium)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter build apk --release --dart-define=IS_PREMIUM=true
 
       - name: Build Flutter Android App Bundle (Standard)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter build appbundle --release --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter Android App Bundle (Premium)
-        working-directory: ./vereinshub_frontend
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
           flutter build appbundle --release --dart-define=IS_PREMIUM=true
 
@@ -357,7 +357,7 @@ jobs:
         with:
           name: android-builds
           path: |
-            vereinshub_frontend/build/app/outputs/flutter-apk/*.apk
-            vereinshub_frontend/build/app/outputs/bundle/*.aab
+            vereinshub_frontend/vereinshub_frontend/build/app/outputs/flutter-apk/*.apk
+            vereinshub_frontend/vereinshub_frontend/build/app/outputs/bundle/*.aab
           retention-days: 7
 
