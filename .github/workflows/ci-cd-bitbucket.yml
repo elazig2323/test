@@ -25,7 +25,9 @@ jobs:
     steps:
       - name: Checkout backend from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinhub_backend.git vereinhub_backend
+          git clone -b dev https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinhub_backend.git vereinhub_backend
+          echo "Checking for Dockerfile..."
+          ls -la vereinhub_backend/Dockerfile || echo "Dockerfile not found"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -46,7 +48,13 @@ jobs:
 
       - name: Build Docker image
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Checking vereinhub_backend directory:"
+          ls -la vereinhub_backend/ | head -20
+          test -f vereinhub_backend/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
           cd vereinhub_backend
+          pwd
+          ls -la | head -20
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} .
 
@@ -78,7 +86,10 @@ jobs:
     steps:
       - name: Checkout portal from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_portal.git vereinshub_portal
+          git clone -b develop https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_portal.git vereinshub_portal
+          ls -la vereinshub_portal/
+          echo "Checking for Dockerfile..."
+          ls -la vereinshub_portal/Dockerfile || echo "Dockerfile not found in root"
 
       - name: Cache Flutter
         uses: actions/cache@v3
@@ -107,7 +118,14 @@ jobs:
 
       - name: Build Docker image
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing vereinshub_portal directory:"
+          ls -la vereinshub_portal/ | head -20
+          echo "Checking for Dockerfile:"
+          test -f vereinshub_portal/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
           cd vereinshub_portal
+          pwd
+          ls -la | head -20
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-portal:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-portal:${{ github.sha }} .
 
@@ -139,7 +157,9 @@ jobs:
     steps:
       - name: Checkout admin from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_admin.git vereinshub_admin
+          git clone -b master https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_admin.git vereinshub_admin
+          echo "Checking for Dockerfile..."
+          ls -la vereinshub_admin/Dockerfile || echo "Dockerfile not found"
 
       - name: Cache Flutter
         uses: actions/cache@v3
@@ -168,7 +188,12 @@ jobs:
 
       - name: Build Docker image
         run: |
+          echo "Checking vereinshub_admin directory:"
+          ls -la vereinshub_admin/ | head -20
+          test -f vereinshub_admin/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
           cd vereinshub_admin
+          pwd
+          ls -la | head -20
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:${{ github.sha }} .
 
@@ -200,7 +225,7 @@ jobs:
     steps:
       - name: Checkout frontend from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Cache Flutter
         uses: actions/cache@v3
@@ -229,7 +254,12 @@ jobs:
 
       - name: Build Docker image (Standard)
         run: |
+          echo "Checking vereinshub_frontend directory structure:"
+          ls -la vereinshub_frontend/ | head -20
+          test -f vereinshub_frontend/vereinshub_frontend/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
           cd vereinshub_frontend/vereinshub_frontend
+          pwd
+          ls -la | head -20
           docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest .
           docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
@@ -263,7 +293,7 @@ jobs:
     steps:
       - name: Checkout frontend from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Cache Flutter
         uses: actions/cache@v3
@@ -292,7 +322,12 @@ jobs:
 
       - name: Build Docker image (Premium)
         run: |
+          echo "Checking vereinshub_frontend directory structure:"
+          ls -la vereinshub_frontend/ | head -20
+          test -f vereinshub_frontend/vereinshub_frontend/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
           cd vereinshub_frontend/vereinshub_frontend
+          pwd
+          ls -la | head -20
           docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest .
           docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
@@ -326,7 +361,7 @@ jobs:
     steps:
       - name: Checkout frontend from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Cache Flutter
         uses: actions/cache@v3
@@ -379,7 +414,7 @@ jobs:
     steps:
       - name: Checkout frontend from Bitbucket
         run: |
-          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Set up Java
         uses: actions/setup-java@v4
