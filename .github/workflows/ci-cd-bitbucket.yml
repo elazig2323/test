@@ -13,6 +13,11 @@ on:
       - master
   workflow_dispatch:  # Manuelles Trigger
 
+# Berechtigungen für GitHub Container Registry
+permissions:
+  contents: read
+  packages: write
+
 env:
   REGISTRY: ghcr.io  # oder docker.io für Docker Hub
   IMAGE_NAME: ${{ github.repository_owner }}/clubsmarter  # Repository-Name für Docker Images
@@ -64,7 +69,9 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Falls GHCR_TOKEN Secret vorhanden ist, wird es verwendet, sonst GITHUB_TOKEN
+          # GHCR_TOKEN sollte ein Personal Access Token mit write:packages Berechtigung sein
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
@@ -135,7 +142,9 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Falls GHCR_TOKEN Secret vorhanden ist, wird es verwendet, sonst GITHUB_TOKEN
+          # GHCR_TOKEN sollte ein Personal Access Token mit write:packages Berechtigung sein
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
@@ -203,7 +212,9 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Falls GHCR_TOKEN Secret vorhanden ist, wird es verwendet, sonst GITHUB_TOKEN
+          # GHCR_TOKEN sollte ein Personal Access Token mit write:packages Berechtigung sein
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
@@ -271,7 +282,9 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Falls GHCR_TOKEN Secret vorhanden ist, wird es verwendet, sonst GITHUB_TOKEN
+          # GHCR_TOKEN sollte ein Personal Access Token mit write:packages Berechtigung sein
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
@@ -339,7 +352,9 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # Falls GHCR_TOKEN Secret vorhanden ist, wird es verwendet, sonst GITHUB_TOKEN
+          # GHCR_TOKEN sollte ein Personal Access Token mit write:packages Berechtigung sein
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
