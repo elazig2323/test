@@ -114,7 +114,8 @@ jobs:
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
-          flutter doctor
+          # Für Web-Builds: Keine Android-Lizenzen nötig, daher --no-android
+          flutter doctor --no-android || true
 
       - name: Build Flutter Web
         working-directory: ./vereinshub_portal
@@ -186,7 +187,8 @@ jobs:
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
-          flutter doctor
+          # Für Web-Builds: Keine Android-Lizenzen nötig, daher --no-android
+          flutter doctor --no-android || true
 
       - name: Build Flutter Web
         working-directory: ./vereinshub_admin
@@ -254,7 +256,8 @@ jobs:
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
-          flutter doctor
+          # Für Web-Builds: Keine Android-Lizenzen nötig, daher --no-android
+          flutter doctor --no-android || true
 
       - name: Build Flutter Web (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
@@ -324,7 +327,8 @@ jobs:
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
-          flutter doctor
+          # Für Web-Builds: Keine Android-Lizenzen nötig, daher --no-android
+          flutter doctor --no-android || true
 
       - name: Build Flutter Web (Premium)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
@@ -394,7 +398,8 @@ jobs:
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
-          flutter doctor
+          # Für Web-Builds: Keine Android-Lizenzen nötig, daher --no-android
+          flutter doctor --no-android || true
 
       - name: Install CocoaPods
         run: |
@@ -453,12 +458,14 @@ jobs:
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
-          flutter doctor
+          # Für Web-Builds: Keine Android-Lizenzen nötig, daher --no-android
+          flutter doctor --no-android || true
 
       - name: Accept Android licenses
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
-          flutter doctor --android-licenses || true
+          # Automatisch alle Android-Lizenzen akzeptieren
+          yes | flutter doctor --android-licenses || true
 
       - name: Build Flutter Android APK (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
