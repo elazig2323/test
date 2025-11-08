@@ -94,12 +94,14 @@ jobs:
             git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter doctor
 
       - name: Build Flutter Web
         working-directory: ./vereinshub_portal
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release
 
@@ -153,12 +155,14 @@ jobs:
             git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter doctor
 
       - name: Build Flutter Web
         working-directory: ./vereinshub_admin
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release
 
@@ -212,12 +216,14 @@ jobs:
             git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter doctor
 
       - name: Build Flutter Web (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release --dart-define=IS_PREMIUM=false
 
@@ -273,12 +279,14 @@ jobs:
             git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter doctor
 
       - name: Build Flutter Web (Premium)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release --dart-define=IS_PREMIUM=true
 
@@ -334,6 +342,7 @@ jobs:
             git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter doctor
 
@@ -345,12 +354,14 @@ jobs:
       - name: Build Flutter iOS (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter iOS (Premium)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=true
 
       - name: Upload iOS artifacts
@@ -390,32 +401,38 @@ jobs:
             git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter --version
           flutter doctor
 
       - name: Accept Android licenses
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter doctor --android-licenses || true
 
       - name: Build Flutter Android APK (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build apk --release --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter Android APK (Premium)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter build apk --release --dart-define=IS_PREMIUM=true
 
       - name: Build Flutter Android App Bundle (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter build appbundle --release --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter Android App Bundle (Premium)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
         run: |
+          export PATH="$HOME/flutter/bin:$PATH"
           flutter build appbundle --release --dart-define=IS_PREMIUM=true
 
       - name: Upload Android artifacts
