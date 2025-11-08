@@ -24,13 +24,20 @@ Die Pipeline baut automatisch bei jedem Push:
 4. **Permissions**: ✅ **Repositories: Read**
 5. Kopiere das Password
 
-### Schritt 2: Secret in GitHub hinzufügen
+### Schritt 2: Secrets in GitHub hinzufügen
 
 1. Gehe zu: `https://github.com/DEIN-USERNAME/clubsmarter_actions/settings/secrets/actions`
 2. Klicke auf **New repository secret**
-3. **Name**: `BITBUCKET_APP_PASSWORD`
-4. **Value**: Das App Password aus Schritt 1
-5. **Add secret**
+
+**Secret 1: Bitbucket Username**
+- **Name**: `BITBUCKET_USERNAME`
+- **Value**: Dein Bitbucket Username (z.B. `muazX`)
+- **Add secret**
+
+**Secret 2: Bitbucket App Password**
+- **Name**: `BITBUCKET_APP_PASSWORD`
+- **Value**: Das App Password aus Schritt 1
+- **Add secret**
 
 ### Schritt 3: Pipeline testen
 

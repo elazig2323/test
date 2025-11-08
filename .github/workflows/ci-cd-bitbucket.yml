@@ -24,12 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout backend from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinhub_backend.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinhub_backend
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinhub_backend.git vereinhub_backend
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -81,12 +77,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout portal from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinshub_portal.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinshub_portal
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_portal.git vereinshub_portal
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -133,12 +125,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout admin from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinshub_admin.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinshub_admin
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_admin.git vereinshub_admin
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -185,12 +173,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout frontend from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinshub_frontend.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinshub_frontend
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -239,12 +223,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout frontend from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinshub_frontend.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinshub_frontend
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -293,12 +273,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout frontend from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinshub_frontend.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinshub_frontend
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -336,12 +312,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout frontend from Bitbucket
-        uses: actions/checkout@v4
-        with:
-          repository: 'https://bitbucket.org/vereinshub/vereinshub_frontend.git'
-          token: ${{ secrets.BITBUCKET_APP_PASSWORD }}
-          fetch-depth: 0
-          path: vereinshub_frontend
+        run: |
+          git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
       - name: Set up Java
         uses: actions/setup-java@v4
