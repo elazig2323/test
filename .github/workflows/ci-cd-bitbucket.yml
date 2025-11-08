@@ -80,11 +80,22 @@ jobs:
         run: |
           git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_portal.git vereinshub_portal
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Cache Flutter
+        uses: actions/cache@v3
         with:
-          flutter-version: 'stable'
-          channel: 'stable'
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          flutter --version
+          flutter doctor
 
       - name: Build Flutter Web
         working-directory: ./vereinshub_portal
@@ -128,11 +139,22 @@ jobs:
         run: |
           git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_admin.git vereinshub_admin
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Cache Flutter
+        uses: actions/cache@v3
         with:
-          flutter-version: 'stable'
-          channel: 'stable'
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          flutter --version
+          flutter doctor
 
       - name: Build Flutter Web
         working-directory: ./vereinshub_admin
@@ -176,11 +198,22 @@ jobs:
         run: |
           git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Cache Flutter
+        uses: actions/cache@v3
         with:
-          flutter-version: 'stable'
-          channel: 'stable'
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          flutter --version
+          flutter doctor
 
       - name: Build Flutter Web (Standard)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
@@ -226,11 +259,22 @@ jobs:
         run: |
           git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Cache Flutter
+        uses: actions/cache@v3
         with:
-          flutter-version: 'stable'
-          channel: 'stable'
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          flutter --version
+          flutter doctor
 
       - name: Build Flutter Web (Premium)
         working-directory: ./vereinshub_frontend/vereinshub_frontend
@@ -276,11 +320,22 @@ jobs:
         run: |
           git clone https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Cache Flutter
+        uses: actions/cache@v3
         with:
-          flutter-version: 'stable'
-          channel: 'stable'
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          flutter --version
+          flutter doctor
 
       - name: Install CocoaPods
         run: |
@@ -321,11 +376,22 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - name: Cache Flutter
+        uses: actions/cache@v3
         with:
-          flutter-version: 'stable'
-          channel: 'stable'
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          flutter --version
+          flutter doctor
 
       - name: Accept Android licenses
         run: |
