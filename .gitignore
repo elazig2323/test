@@ -1,0 +1,21 @@
+# GitHub Actions CI/CD Repository
+# Ignoriere lokale Dateien, die nicht committed werden sollen
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
