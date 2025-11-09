@@ -49,20 +49,15 @@ jobs:
           flutter doctor --no-android || true
 
       - name: Build Flutter Web (Standard)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release --dart-define=IS_PREMIUM=false
 
       - name: Build Docker image (Standard)
+        working-directory: ./vereinshub_frontend
         run: |
-          echo "Checking vereinshub_frontend directory structure:"
-          ls -la vereinshub_frontend/ | head -20
-          test -f vereinshub_frontend/vereinshub_frontend/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
-          cd vereinshub_frontend/vereinshub_frontend
-          pwd
-          ls -la | head -20
           docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest .
           docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
@@ -116,20 +111,15 @@ jobs:
           flutter doctor --no-android || true
 
       - name: Build Flutter Web (Premium)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release --dart-define=IS_PREMIUM=true
 
       - name: Build Docker image (Premium)
+        working-directory: ./vereinshub_frontend
         run: |
-          echo "Checking vereinshub_frontend directory structure:"
-          ls -la vereinshub_frontend/ | head -20
-          test -f vereinshub_frontend/vereinshub_frontend/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
-          cd vereinshub_frontend/vereinshub_frontend
-          pwd
-          ls -la | head -20
           docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest .
           docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
@@ -155,4 +145,5 @@ jobs:
         run: |
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:${{ github.sha }}
+
 

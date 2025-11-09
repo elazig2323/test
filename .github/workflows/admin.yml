@@ -89,3 +89,4 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:${{ github.sha }}
 
+

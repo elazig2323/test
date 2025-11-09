@@ -46,14 +46,14 @@ jobs:
           pod setup
 
       - name: Build Flutter iOS (Standard)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter iOS (Premium)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=true
@@ -63,6 +63,7 @@ jobs:
         with:
           name: ios-builds
           path: |
-            vereinshub_frontend/vereinshub_frontend/build/ios/iphoneos/Runner.app
+            vereinshub_frontend/build/ios/iphoneos/Runner.app
           retention-days: 7
+
 

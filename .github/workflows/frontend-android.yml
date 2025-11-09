@@ -52,26 +52,26 @@ jobs:
           yes | flutter doctor --android-licenses || true
 
       - name: Build Flutter Android APK (Standard)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build apk --release --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter Android APK (Premium)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter build apk --release --dart-define=IS_PREMIUM=true
 
       - name: Build Flutter Android App Bundle (Standard)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter build appbundle --release --dart-define=IS_PREMIUM=false
 
       - name: Build Flutter Android App Bundle (Premium)
-        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter build appbundle --release --dart-define=IS_PREMIUM=true
@@ -81,7 +81,8 @@ jobs:
         with:
           name: android-builds
           path: |
-            vereinshub_frontend/vereinshub_frontend/build/app/outputs/flutter-apk/*.apk
-            vereinshub_frontend/vereinshub_frontend/build/app/outputs/bundle/*.aab
+            vereinshub_frontend/build/app/outputs/flutter-apk/*.apk
+            vereinshub_frontend/build/app/outputs/bundle/*.aab
           retention-days: 7
+
 

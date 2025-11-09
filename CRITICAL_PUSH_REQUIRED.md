@@ -69,3 +69,4 @@ Nach dem Push, prüfe im Bitbucket-Repository:
 3. Prüfe die Git-Logs: `git log --oneline -5`
 
 
+

@@ -52,3 +52,4 @@ Nach dem Push kannst du im Bitbucket-Repository prüfen:
 - `lib/widgets/comment_widget.dart` sollte `import 'package:flutter/material.dart';` haben
 
 
+
