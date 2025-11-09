@@ -82,5 +82,36 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
 
+  deploy:
+    name: Deploy Backend
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_SERVER_HOST }}
+          username: ${{ secrets.DEPLOY_SERVER_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SERVER_PORT || 22 }}
+          script: |
+            # Login zu GitHub Container Registry
+            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            
+            # Wechsle ins Projektverzeichnis
+            cd ${{ secrets.DEPLOY_PROJECT_PATH || '/opt/clubsmarter' }}
+            
+            # Pull neues Docker Image
+            docker-compose pull clubsmarter_backend || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+            
+            # Starte Container neu
+            docker-compose up -d clubsmarter_backend || docker-compose restart clubsmarter_backend
+            
+            # Prüfe Container-Status
+            docker-compose ps clubsmarter_backend
+            
+            echo "✅ Backend erfolgreich deployed!"
+
 
 
