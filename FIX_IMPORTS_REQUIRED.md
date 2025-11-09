@@ -51,3 +51,4 @@ Nach dem Push kannst du im Bitbucket-Repository prüfen:
 - `lib/services/location_service.dart` sollte `import 'package:geolocator/geolocator.dart';` haben
 - `lib/widgets/comment_widget.dart` sollte `import 'package:flutter/material.dart';` haben
 
+

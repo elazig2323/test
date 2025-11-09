@@ -117,3 +117,4 @@ Um mehr Informationen zu erhalten:
 2. Falls es weiterhin fehlschlägt, prüfe die Build-Logs für spezifische Fehlermeldungen
 3. Erwäge Lösung 3 (Build außerhalb von Docker) als Alternative
 
+

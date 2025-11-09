@@ -76,3 +76,4 @@ Die Images sind dann verfügbar unter:
 - **Repository-Sichtbarkeit**: Packages sind standardmäßig privat. Um sie öffentlich zu machen, gehe zu Package Settings → Change visibility
 - **Token-Sicherheit**: Bewahre dein PAT sicher auf und teile es niemals öffentlich
 
+
