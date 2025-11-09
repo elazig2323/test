@@ -177,9 +177,17 @@ cd /opt/clubsmarter
 
 ## 📁 Schritt 4: Docker Compose Datei erstellen
 
+**⚠️ WICHTIG: Dieser Schritt ist OBLIGATORISCH!**
+- Die `docker-compose.yml` Datei muss auf dem Server existieren, bevor das Deployment funktioniert
+- Diese Datei wird NICHT automatisch vom Deployment-Skript erstellt
+- Ohne diese Datei funktioniert `docker-compose ps` nicht (Fehler: "no configuration file provided")
+
 ### 4.1 Docker Compose Datei erstellen
 
 ```bash
+# Stelle sicher, dass du im richtigen Verzeichnis bist
+cd /opt/clubsmarter
+
 # Erstelle docker-compose.yml
 nano /opt/clubsmarter/docker-compose.yml
 ```
@@ -327,7 +335,7 @@ nano /opt/clubsmarter/.env
 
 ```env
 # Django Settings
-DJANGO_SECRET_KEY=django-insecure-_&0@rhas!3$x0ba(&hivg51s-)^(-d=7x+34njhmy6ab)l77y!
+DJANGO_SECRET_KEY="django-insecure-_&0@rhas!3\$x0ba(&hivg51s-)^(-d=7x+34njhmy6ab)l77y!"
 DEBUG=False
 
 # Database (PostgreSQL Container)
@@ -354,6 +362,13 @@ DB_HOST=postgres_clubsmarter
   - `DB_HOST=postgres_clubsmarter` - Service-Name aus docker-compose (NICHT localhost!)
 - 📝 **Vereinfacht:** `DB_NAME`, `DB_USER`, `DB_PASSWORD` werden automatisch aus `POSTGRES_*` übernommen (siehe docker-compose.yml)
 - 🔒 **Sicherheit:** Diese Datei enthält sensible Daten - niemals committen oder teilen!
+- ⚠️ **WICHTIG - DJANGO_SECRET_KEY:**
+  - Der Secret Key muss in **Anführungszeichen** gesetzt werden: `DJANGO_SECRET_KEY="..."` 
+  - Das `$` Zeichen muss escaped werden: `\$` (sonst interpretiert docker-compose es als Variable)
+  - **Falls du Warnungen wie "The 'x0ba' variable is not set" bekommst:**
+    - Öffne die `.env` Datei: `nano /opt/clubsmarter/.env`
+    - Setze den `DJANGO_SECRET_KEY` in Anführungszeichen und escape das `$`: `DJANGO_SECRET_KEY="...\$..."`
+    - Speichere und teste: `docker-compose config` (sollte keine Warnungen mehr zeigen)
 
 ### 4.3 Verzeichnisse erstellen
 
@@ -362,6 +377,28 @@ DB_HOST=postgres_clubsmarter
 mkdir -p /opt/clubsmarter/clubsmarter_backend/{uploads,logs,credentials}
 chmod -R 755 /opt/clubsmarter/clubsmarter_backend
 ```
+
+### 4.4 Erstellung bestätigen
+
+```bash
+# Prüfe, ob docker-compose.yml existiert
+ls -la /opt/clubsmarter/docker-compose.yml
+
+# Prüfe, ob .env existiert
+ls -la /opt/clubsmarter/.env
+
+# Teste docker-compose Syntax (sollte keine Fehler zeigen)
+cd /opt/clubsmarter
+docker-compose config
+```
+
+**✅ Wenn alles korrekt ist:**
+- `docker-compose config` zeigt die geparste Konfiguration ohne Fehler
+- Du kannst jetzt mit Schritt 5 fortfahren
+
+**❌ Falls Fehler auftreten:**
+- Prüfe, ob die YAML-Syntax korrekt ist (Einrückungen!)
+- Prüfe, ob beide Dateien existieren: `ls -la /opt/clubsmarter/`
 
 ---
 
@@ -698,12 +735,30 @@ docker-compose logs -f
 
 ### 8.3 Erste Deployment via CI/CD auslösen
 
+**Verfügbare Deployments:**
+- ✅ **Backend CI/CD** - Django Backend
+- ✅ **Admin CI/CD** - Flutter Admin Interface
+- ✅ **Portal CI/CD** - Flutter Portal Interface (neu hinzugefügt!)
+
+**Backend Deployment:**
 1. Gehe zu: `https://github.com/varizee/clubsmarter_actions/actions`
 2. Wähle den **"Backend CI/CD"** Workflow
 3. Klicke auf **"Run workflow"**
 4. Wähle Branch: `main`
 5. Klicke auf **"Run workflow"**
 6. Beobachte den Workflow-Run
+
+**Admin Deployment:**
+1. Wähle den **"Admin CI/CD"** Workflow
+2. Klicke auf **"Run workflow"**
+3. Wähle Branch: `main`
+4. Klicke auf **"Run workflow"**
+
+**Portal Deployment:**
+1. Wähle den **"Portal CI/CD"** Workflow
+2. Klicke auf **"Run workflow"**
+3. Wähle Branch: `main`
+4. Klicke auf **"Run workflow"**
 
 **Erwartetes Verhalten:**
 - ✅ Build Job läuft erfolgreich
@@ -715,6 +770,12 @@ docker-compose logs -f
 ### 8.4 Services prüfen
 
 ```bash
+# WICHTIG: Wechsle zuerst ins Projektverzeichnis!
+cd /opt/clubsmarter
+
+# Prüfe, ob docker-compose.yml existiert
+ls -la docker-compose.yml
+
 # Auf dem Server: Container-Status prüfen
 docker-compose ps
 
@@ -725,7 +786,424 @@ docker-compose logs clubsmarter_admin
 # Services testen
 curl http://localhost:8000/api/health/  # Backend
 curl http://localhost:8091/              # Admin
+curl http://localhost:8090/              # Portal
+curl http://localhost:8092/              # Frontend (Standard)
 ```
+
+### 8.5 Alle Services testen und Portal prüfen
+
+**1. Container-Status prüfen:**
+
+```bash
+# Prüfe, ob alle Container laufen
+cd /opt/clubsmarter
+docker-compose ps
+
+# Erwartete Ausgabe: Alle Container sollten "Up" sein
+# - clubsmarter_postgres: Up (healthy)
+# - clubsmarter_backend: Up (healthy)
+# - clubsmarter_admin: Up
+# - clubsmarter_portal: Up (falls gestartet)
+# - clubsmarter_frontend: Up (falls gestartet)
+```
+
+**2. Logs prüfen:**
+
+```bash
+# Backend Logs (sollte keine Fehler zeigen)
+docker-compose logs clubsmarter_backend --tail=50
+
+# Admin Logs
+docker-compose logs clubsmarter_admin --tail=50
+
+# Portal Logs (falls gestartet)
+docker-compose logs clubsmarter_portal --tail=50
+
+# Alle Logs gleichzeitig
+docker-compose logs --tail=50
+```
+
+**3. API-Endpunkte testen:**
+
+```bash
+# Backend Health Check
+curl http://localhost:8000/api/health/
+# Erwartete Antwort: {"status": "ok"} oder ähnlich
+
+# Backend API Root
+curl http://localhost:8000/api/
+# Sollte eine API-Übersicht zurückgeben
+
+# Test-Tenant API (mit Domain)
+curl -H "Host: testverein.localhost" http://localhost:8000/api/
+# Sollte tenant-spezifische API zurückgeben
+```
+
+**4. Web-Services testen (lokal):**
+
+```bash
+# Admin Interface (Port 8091)
+curl -I http://localhost:8091/
+# Sollte HTTP 200 zurückgeben
+
+# Portal (Port 8090, falls gestartet)
+curl -I http://localhost:8090/
+# Sollte HTTP 200 zurückgeben
+
+# Frontend (Port 8092, falls gestartet)
+curl -I http://localhost:8092/
+# Sollte HTTP 200 zurückgeben
+```
+
+**5. Portal im Browser testen (falls Nginx konfiguriert ist):**
+
+Falls du Nginx bereits konfiguriert hast (Schritt 5), kannst du die Services über die Domain aufrufen:
+
+```bash
+# Prüfe, ob Nginx läuft
+systemctl status nginx
+
+# Prüfe Nginx-Konfiguration
+nginx -t
+
+# Teste Domains (von deinem lokalen Rechner aus):
+# - https://clubsmarter.de (Portal)
+# - https://admin.clubsmarter.de (Admin)
+# - https://api.clubsmarter.de/api/health/ (Backend API)
+# - https://testverein.clubsmarter.de (Frontend für Test-Tenant)
+```
+
+**6. Tenant-spezifische Tests:**
+
+```bash
+# Prüfe, ob der Test-Tenant existiert
+docker-compose exec clubsmarter_backend python manage.py shell
+
+# Im Python Shell:
+from apps.tenants.models import Tenant, Domain
+tenants = Tenant.objects.all()
+for t in tenants:
+    print(f"Tenant: {t.name} (Schema: {t.schema_name})")
+    domains = Domain.objects.filter(tenant=t)
+    for d in domains:
+        print(f"  Domain: {d.domain}")
+exit()
+
+# Teste Tenant-API mit korrektem Host-Header
+curl -H "Host: testverein.localhost" http://localhost:8000/api/health/
+```
+
+**7. Vollständiger Service-Test:**
+
+```bash
+# Erstelle ein Test-Script
+cat > /tmp/test_services.sh << 'EOF'
+#!/bin/bash
+echo "=== Container Status ==="
+docker-compose ps
+
+echo -e "\n=== Backend Health ==="
+curl -s http://localhost:8000/api/health/ | head -1
+
+echo -e "\n=== Admin Interface ==="
+curl -sI http://localhost:8091/ | head -1
+
+echo -e "\n=== Portal Interface ==="
+curl -sI http://localhost:8090/ | head -1
+
+echo -e "\n=== Test-Tenant API ==="
+curl -sH "Host: testverein.localhost" http://localhost:8000/api/health/ | head -1
+
+echo -e "\n=== Test abgeschlossen ==="
+EOF
+
+chmod +x /tmp/test_services.sh
+/tmp/test_services.sh
+```
+
+**Erwartete Ergebnisse:**
+- ✅ Alle Container laufen (Status: Up)
+- ✅ Backend API antwortet mit `{"status": "ok"}` oder ähnlich
+- ✅ Admin Interface lädt (HTTP 200)
+- ✅ Portal Interface lädt (HTTP 200, falls gestartet)
+- ✅ Tenant-API funktioniert mit korrektem Host-Header
+
+**⚠️ Fehlerbehebung:**
+
+**Problem: Container startet ständig neu (Restarting)**
+
+Falls ein Container ständig neu startet (z.B. `clubsmarter_admin` oder `clubsmarter_portal`):
+
+```bash
+# 1. Prüfe die Logs des fehlerhaften Containers
+docker-compose logs clubsmarter_admin --tail=100
+# oder
+docker-compose logs clubsmarter_portal --tail=100
+
+# 2. Prüfe die Container-Details
+docker-compose ps
+
+# 3. Prüfe die Container-Logs direkt
+docker logs clubsmarter_admin
+# oder
+docker logs clubsmarter_portal
+
+# 4. Häufige Ursachen:
+# - Fehlende Umgebungsvariablen
+# - Fehlerhafte Konfiguration
+# - Port-Konflikte
+# - Fehlende Abhängigkeiten (z.B. Backend nicht erreichbar)
+
+# 5. Prüfe, ob das Backend läuft (Admin/Portal benötigen Backend)
+docker-compose ps clubsmarter_backend
+
+# 6. Prüfe die Netzwerk-Verbindung
+docker-compose exec clubsmarter_admin ping clubsmarter_backend
+# oder
+docker-compose exec clubsmarter_portal ping clubsmarter_backend
+
+# 7. Starte den Container manuell neu
+docker-compose restart clubsmarter_admin
+# oder
+docker-compose restart clubsmarter_portal
+
+# 8. Falls das nicht hilft, starte alle Container neu
+docker-compose down
+docker-compose up -d
+```
+
+**Problem: Backend ist "unhealthy"**
+
+```bash
+# 1. Prüfe die Backend-Logs
+docker-compose logs clubsmarter_backend --tail=100
+
+# 2. Prüfe die Health-Check-Logs
+docker inspect clubsmarter_backend | grep -A 10 Health
+
+# 3. Teste die Backend-API manuell
+curl http://localhost:8000/api/health/
+
+# 4. Prüfe, ob die Datenbank erreichbar ist
+docker-compose exec clubsmarter_backend python manage.py check --database default
+
+# 5. Prüfe die Datenbank-Verbindung
+docker-compose exec postgres_clubsmarter psql -U vereinsmanagement_user -d vereinsmanagement -c "SELECT 1;"
+
+# 6. Häufige Ursachen:
+# - Datenbank nicht erreichbar
+# - Fehlende Migrationen
+# - Fehlerhafte .env Konfiguration
+# - Port-Konflikte
+
+# 7. Starte Backend neu
+docker-compose restart clubsmarter_backend
+```
+
+**Problem 1: `no configuration file provided: not found`**
+1. **Prüfe, ob du im richtigen Verzeichnis bist:** `pwd` (sollte `/opt/clubsmarter` sein)
+2. **Prüfe, ob die Datei existiert:** `ls -la /opt/clubsmarter/docker-compose.yml`
+3. **Falls die Datei NICHT existiert:**
+   - Die `docker-compose.yml` muss manuell erstellt werden (siehe **Schritt 4**)
+   - Das Deployment-Skript erstellt diese Datei NICHT automatisch
+   - Gehe zurück zu **Schritt 4.1** und erstelle die Datei
+4. **Falls die Datei existiert, aber du trotzdem den Fehler bekommst:**
+   - Wechsle ins Verzeichnis: `cd /opt/clubsmarter`
+   - Prüfe die Syntax: `docker-compose config`
+
+**Problem 2: `relation "tenants_domain" does not exist` oder `database "vereinsmanagement_user" does not exist`**
+
+Dies bedeutet, dass die Datenbank-Migrationen noch nicht ausgeführt wurden. Führe folgende Schritte aus:
+
+**WICHTIG: Behebe zuerst die DJANGO_SECRET_KEY Warnung!**
+
+```bash
+# 1. Öffne die .env Datei
+nano /opt/clubsmarter/.env
+
+# 2. Finde die Zeile mit DJANGO_SECRET_KEY
+# Ändere von:
+# DJANGO_SECRET_KEY=django-insecure-_&0@rhas!3$x0ba(&hivg51s-)^(-d=7x+34njhmy6ab)l77y!
+# Zu:
+DJANGO_SECRET_KEY="django-insecure-_&0@rhas!3\$x0ba(&hivg51s-)^(-d=7x+34njhmy6ab)l77y!"
+
+# 3. Speichere (Ctrl+O, Enter, Ctrl+X)
+# 4. Teste: docker-compose config (sollte keine Warnungen mehr zeigen)
+# 5. Starte Container neu
+docker-compose restart clubsmarter_backend
+```
+
+**Dann führe die Migrationen aus:**
+
+```bash
+# Stelle sicher, dass du im Projektverzeichnis bist
+cd /opt/clubsmarter
+
+# Prüfe, ob die Container laufen
+docker-compose ps
+
+# Führe zuerst die Standard-Migrationen aus (für das public Schema)
+docker-compose exec clubsmarter_backend python manage.py migrate
+
+# Dann die Tenant-Migrationen (für das shared Schema)
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas --shared
+
+# Falls Fehler "relation does not exist" auftreten, führe die Migrationen erneut aus
+# Manchmal müssen Migrationen mehrmals ausgeführt werden, wenn Abhängigkeiten bestehen
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas --shared
+```
+
+**Problem 3: Falscher Datenbankname (`database "vereinsmanagement_user" does not exist`)**
+
+Prüfe die `.env` Datei:
+
+```bash
+# Öffne die .env Datei
+nano /opt/clubsmarter/.env
+
+# Stelle sicher, dass folgende Werte korrekt sind:
+# POSTGRES_DB=vereinsmanagement          (NICHT vereinsmanagement_user!)
+# POSTGRES_USER=vereinsmanagement_user    (Das ist der USER, nicht die DB!)
+# DB_NAME sollte NICHT gesetzt sein (wird automatisch aus POSTGRES_DB übernommen)
+
+# Speichere und starte Container neu
+docker-compose restart clubsmarter_backend
+```
+
+**Problem 4: `relation "core_mitglied" does not exist` während Migrationen**
+
+Dies tritt auf, wenn Migrationen in falscher Reihenfolge ausgeführt werden. Die `admin` Migration versucht auf `core_mitglied` zuzugreifen, bevor die `core` Migrationen abgeschlossen sind.
+
+**Lösung 1: Migrationen in der richtigen Reihenfolge ausführen**
+
+```bash
+# 1. Prüfe, welche Migrationen bereits ausgeführt wurden
+docker-compose exec clubsmarter_backend python manage.py showmigrations
+
+# 2. Führe ZUERST ALLE ausstehenden core Migrationen aus (wichtig!)
+# Dies stellt sicher, dass alle core Tabellen erstellt sind, bevor admin Migrationen ausgeführt werden
+docker-compose exec clubsmarter_backend python manage.py migrate core
+
+# 3. Dann die anderen Apps (contenttypes und auth sind bereits fertig)
+docker-compose exec clubsmarter_backend python manage.py migrate contenttypes
+docker-compose exec clubsmarter_backend python manage.py migrate auth
+
+# 4. Jetzt können die admin Migrationen ausgeführt werden
+docker-compose exec clubsmarter_backend python manage.py migrate admin
+
+# 5. Dann alle anderen ausstehenden Migrationen
+docker-compose exec clubsmarter_backend python manage.py migrate
+
+# 6. Dann die Tenant-Migrationen (für das shared Schema)
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas --shared
+```
+
+**Wichtig:** Falls `migrate core` fehlschlägt, führe die Migrationen Schritt für Schritt aus:
+
+```bash
+# Führe core Migrationen einzeln aus (falls migrate core fehlschlägt)
+docker-compose exec clubsmarter_backend python manage.py migrate core 0002_team_mitglied_hauptteam
+docker-compose exec clubsmarter_backend python manage.py migrate core 0003_event
+# ... usw. für alle ausstehenden core Migrationen
+# Oder einfach:
+docker-compose exec clubsmarter_backend python manage.py migrate core --fake-initial
+docker-compose exec clubsmarter_backend python manage.py migrate core
+```
+
+**Falls `admin` Migrationen immer noch fehlschlagen, obwohl core Migrationen ausgeführt wurden:**
+
+**Wichtig:** Bei django-tenants werden App-Tabellen (wie `core_mitglied`) in **Tenant-Schemas** erstellt, nicht im `public` Schema. Das `public` Schema enthält nur shared Tabellen (z.B. `tenants_tenant`, `tenants_domain`).
+
+Das Problem: Die `admin.0001_initial` Migration versucht auf `core_mitglied` zuzugreifen, aber diese Tabelle existiert nur in Tenant-Schemas, nicht im public Schema.
+
+**Lösung: Migrationen für das shared Schema ausführen**
+
+```bash
+# 1. Prüfe, welche Schemas existieren
+docker-compose exec postgres_clubsmarter psql -U vereinsmanagement_user -d vereinsmanagement -c "\dn"
+
+# 2. Prüfe, welche Tabellen im public Schema sind (sollten nur shared Tabellen sein)
+docker-compose exec postgres_clubsmarter psql -U vereinsmanagement_user -d vereinsmanagement -c "\dt public.*"
+
+# 3. Führe die Migrationen für das SHARED Schema aus (nicht public!)
+# Das shared Schema ist das Schema, das von allen Tenants geteilt wird
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas --shared
+
+# 4. Falls die admin Migration immer noch fehlschlägt, könnte sie falsch konfiguriert sein
+# Versuche, die admin Migration zu überspringen oder zu fixen:
+docker-compose exec clubsmarter_backend python manage.py migrate admin --fake
+docker-compose exec clubsmarter_backend python manage.py migrate
+
+# 5. Dann alle anderen Migrationen
+docker-compose exec clubsmarter_backend python manage.py migrate
+```
+
+**Alternative: Verwende den create_test_verein Command**
+
+Das Backend hat einen Management-Command, der automatisch einen Test-Verein erstellt:
+
+```bash
+# Erstelle einen Test-Verein (erstellt automatisch Tenant, Domain, Verein und Admin-Mitglied)
+docker-compose exec clubsmarter_backend python manage.py create_test_verein \
+  --name=testverein \
+  --email=admin@testverein.de \
+  --password=admin1234 \
+  --domain=localhost
+
+# Der Command erstellt automatisch:
+# - Tenant mit Schema "testverein"
+# - Domain "testverein.localhost"
+# - Verein im Tenant-Schema
+# - Admin-Mitglied mit Email admin@testverein.de
+
+# Dann führe Migrationen für alle Tenants aus (inkl. den neuen Test-Verein)
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas
+```
+
+**Manuelle Alternative (falls der Command nicht funktioniert):**
+
+```bash
+# Erstelle einen Test-Tenant manuell
+docker-compose exec clubsmarter_backend python manage.py shell
+
+# Im Python Shell:
+from apps.tenants.models import Tenant, Domain
+tenant = Tenant.objects.create(schema_name='test', name='Test Verein', is_premium=False)
+Domain.objects.create(domain='test.localhost', tenant=tenant, is_primary=True)
+exit()
+
+# Führe Migrationen für alle Tenants aus
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas
+```
+
+**Lösung 2: Falls Lösung 1 nicht funktioniert - Datenbank zurücksetzen (NUR wenn keine wichtigen Daten vorhanden sind!)**
+
+```bash
+# ⚠️ WARNUNG: Dies löscht alle Daten in der Datenbank!
+# Nur ausführen, wenn keine wichtigen Daten vorhanden sind!
+
+# 1. Container stoppen
+docker-compose down
+
+# 2. Datenbank-Volume löschen
+docker volume rm clubsmarter_postgres_clubsmarter_data
+
+# 3. Container neu starten
+docker-compose up -d
+
+# 4. Warte bis PostgreSQL bereit ist (ca. 10 Sekunden)
+sleep 10
+
+# 5. Migrationen in der richtigen Reihenfolge ausführen
+docker-compose exec clubsmarter_backend python manage.py migrate core
+docker-compose exec clubsmarter_backend python manage.py migrate
+docker-compose exec clubsmarter_backend python manage.py migrate_schemas --shared
+```
+
+**Nach den Migrationen:**
+- Prüfe die Logs: `docker-compose logs clubsmarter_backend`
+- Teste die API: `curl http://localhost:8000/api/health/`
+- Die Fehler sollten jetzt verschwunden sein
 
 ---
 
