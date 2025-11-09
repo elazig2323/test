@@ -873,6 +873,104 @@ nginx -t
 # - https://testverein.clubsmarter.de (Frontend für Test-Tenant)
 ```
 
+### 8.6 Nächste Schritte nach Portal-Deployment
+
+**✅ Sofort prüfen:**
+
+```bash
+# 1. Prüfe, ob Portal-Container läuft
+cd /opt/clubsmarter
+docker-compose ps clubsmarter_portal
+
+# 2. Prüfe Portal-Logs
+docker-compose logs clubsmarter_portal --tail=50
+
+# 3. Teste Portal lokal
+curl -I http://localhost:8090/
+# Sollte HTTP 200 zurückgeben
+
+# 4. Prüfe alle Container
+docker-compose ps
+```
+
+**📋 Checkliste - Was ist noch zu tun?**
+
+- [ ] **Portal läuft** - Container-Status prüfen (`docker-compose ps`)
+- [ ] **Portal lokal getestet** - `curl -I http://localhost:8090/` sollte HTTP 200 zurückgeben
+- [ ] **Nginx konfiguriert** - Falls noch nicht geschehen, siehe **Schritt 5**
+- [ ] **DNS konfiguriert** - Domain auf Server-IP zeigen lassen, siehe **Schritt 11**
+- [ ] **SSL-Zertifikat erstellt** - HTTPS einrichten, siehe **Schritt 11**
+- [ ] **Portal über Domain erreichbar** - `https://clubsmarter.de` im Browser testen
+
+**🔧 Falls Portal nicht läuft:**
+
+**Problem: `no such service: clubsmarter_portal`**
+
+Dies bedeutet, dass der Portal-Service nicht in der `docker-compose.yml` auf dem Server ist. Füge ihn hinzu:
+
+```bash
+# 1. Öffne die docker-compose.yml
+nano /opt/clubsmarter/docker-compose.yml
+
+# 2. Füge den Portal-Service hinzu (nach clubsmarter_admin, vor clubsmarter_frontend):
+```
+
+**Füge diesen Abschnitt ein:**
+
+```yaml
+  # ClubSmarter Portal (Flutter Web) - Hauptdomain: clubsmarter.de
+  clubsmarter_portal:
+    image: ghcr.io/varizee/clubsmarter-portal:latest
+    container_name: clubsmarter_portal
+    ports:
+      - "127.0.0.1:8090:80"  # Nur lokal erreichbar (Nginx als Reverse Proxy)
+    depends_on:
+      - clubsmarter_backend
+    networks:
+      - clubsmarter_network
+    restart: unless-stopped
+```
+
+**Wichtig:** Stelle sicher, dass die Einrückung korrekt ist (2 Leerzeichen) und dass der Service unter `services:` eingerückt ist!
+
+```bash
+# 3. Speichere die Datei (Ctrl+O, Enter, Ctrl+X)
+
+# 4. Prüfe die Syntax
+docker-compose config
+
+# 5. Starte den Portal-Container
+docker-compose up -d clubsmarter_portal
+
+# 6. Prüfe den Status
+docker-compose ps clubsmarter_portal
+```
+
+**Andere Probleme:**
+
+```bash
+# Prüfe Logs
+docker-compose logs clubsmarter_portal --tail=100
+
+# Prüfe, ob Backend erreichbar ist (Portal benötigt Backend)
+docker-compose ps clubsmarter_backend
+
+# Starte Portal neu
+docker-compose restart clubsmarter_portal
+
+# Falls das nicht hilft, starte alle Container neu
+docker-compose down
+docker-compose up -d
+```
+
+**🌐 Nginx konfigurieren (falls noch nicht geschehen):**
+
+Falls Nginx noch nicht konfiguriert ist, siehe **Schritt 5** in der Anleitung. Das Portal sollte dann über die Domain erreichbar sein.
+
+**🔒 SSL-Zertifikat einrichten (falls noch nicht geschehen):**
+
+Falls SSL noch nicht eingerichtet ist, siehe **Schritt 11** in der Anleitung.
+
 **6. Tenant-spezifische Tests:**
 
 ```bash
