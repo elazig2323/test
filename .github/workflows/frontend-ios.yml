@@ -1,0 +1,68 @@
+name: Frontend iOS CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - master
+  pull_request:
+    branches:
+      - main
+      - develop
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Frontend (iOS)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout frontend from Bitbucket
+        run: |
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
+
+      - name: Cache Flutter
+        uses: actions/cache@v3
+        with:
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter --version
+          flutter doctor --no-android || true
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+          pod setup
+
+      - name: Build Flutter iOS (Standard)
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter pub get
+          flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=false
+
+      - name: Build Flutter iOS (Premium)
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=true
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-builds
+          path: |
+            vereinshub_frontend/vereinshub_frontend/build/ios/iphoneos/Runner.app
+          retention-days: 7
+

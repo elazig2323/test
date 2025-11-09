@@ -1,0 +1,87 @@
+name: Frontend Android CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - master
+  pull_request:
+    branches:
+      - main
+      - develop
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Frontend (Android)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout frontend from Bitbucket
+        run: |
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Flutter
+        uses: actions/cache@v3
+        with:
+          path: $HOME/flutter
+          key: flutter-stable-${{ runner.os }}
+          restore-keys: |
+            flutter-stable-
+
+      - name: Install Flutter
+        run: |
+          if [ ! -d "$HOME/flutter" ]; then
+            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+          fi
+          echo "$HOME/flutter/bin" >> $GITHUB_PATH
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter --version
+          flutter doctor --no-android || true
+
+      - name: Accept Android licenses
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          yes | flutter doctor --android-licenses || true
+
+      - name: Build Flutter Android APK (Standard)
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter pub get
+          flutter build apk --release --dart-define=IS_PREMIUM=false
+
+      - name: Build Flutter Android APK (Premium)
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter build apk --release --dart-define=IS_PREMIUM=true
+
+      - name: Build Flutter Android App Bundle (Standard)
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter build appbundle --release --dart-define=IS_PREMIUM=false
+
+      - name: Build Flutter Android App Bundle (Premium)
+        working-directory: ./vereinshub_frontend/vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          flutter build appbundle --release --dart-define=IS_PREMIUM=true
+
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-builds
+          path: |
+            vereinshub_frontend/vereinshub_frontend/build/app/outputs/flutter-apk/*.apk
+            vereinshub_frontend/vereinshub_frontend/build/app/outputs/bundle/*.aab
+          retention-days: 7
+

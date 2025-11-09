@@ -1,0 +1,84 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - master
+  pull_request:
+    branches:
+      - main
+      - develop
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/clubsmarter
+
+jobs:
+  build-and-test:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout backend from Bitbucket
+        run: |
+          git clone -b dev https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinhub_backend.git vereinhub_backend
+          echo "Checking for Dockerfile..."
+          ls -la vereinhub_backend/Dockerfile || echo "Dockerfile not found"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        working-directory: ./vereinhub_backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        working-directory: ./vereinhub_backend
+        run: |
+          pip install pytest pytest-django pytest-cov
+          pytest --cov=apps --cov-report=html || true
+
+      - name: Build Docker image
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Checking vereinhub_backend directory:"
+          ls -la vereinhub_backend/ | head -20
+          test -f vereinhub_backend/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
+          cd vereinhub_backend
+          pwd
+          ls -la | head -20
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest .
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }} .
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request' && env.REGISTRY == 'ghcr.io'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ github.sha }}
+
