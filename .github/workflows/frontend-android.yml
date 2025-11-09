@@ -51,6 +51,25 @@ jobs:
           export PATH="$HOME/flutter/bin:$PATH"
           yes | flutter doctor --android-licenses || true
 
+      - name: Get Premium Tenants
+        id: premium-tenants
+        run: |
+          # Liste der Premium-Vereine (schema_name oder tenant.name)
+          # Diese Liste kann manuell gepflegt werden oder über API geholt werden
+          # Format: "verein1,verein2,verein3"
+          PREMIUM_TENANTS="${PREMIUM_TENANTS:-}"
+          
+          # Falls PREMIUM_TENANTS nicht gesetzt ist, verwende leere Liste
+          if [ -z "$PREMIUM_TENANTS" ]; then
+            echo "Keine Premium-Tenants konfiguriert. Verwende leere Liste."
+            echo "tenants=" >> $GITHUB_OUTPUT
+          else
+            echo "Premium-Tenants: $PREMIUM_TENANTS"
+            echo "tenants=$PREMIUM_TENANTS" >> $GITHUB_OUTPUT
+          fi
+        env:
+          PREMIUM_TENANTS: ${{ secrets.PREMIUM_TENANTS || '' }}
+
       - name: Build Flutter Android APK (Standard)
         working-directory: ./vereinshub_frontend
         run: |
@@ -58,23 +77,79 @@ jobs:
           flutter pub get
           flutter build apk --release --dart-define=IS_PREMIUM=false
 
-      - name: Build Flutter Android APK (Premium)
-        working-directory: ./vereinshub_frontend
-        run: |
-          export PATH="$HOME/flutter/bin:$PATH"
-          flutter build apk --release --dart-define=IS_PREMIUM=true
-
       - name: Build Flutter Android App Bundle (Standard)
         working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter build appbundle --release --dart-define=IS_PREMIUM=false
 
-      - name: Build Flutter Android App Bundle (Premium)
+      - name: Build Flutter Android APK (Premium - Pro Verein)
         working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
-          flutter build appbundle --release --dart-define=IS_PREMIUM=true
+          TENANTS="${{ steps.premium-tenants.outputs.tenants }}"
+          
+          if [ -z "$TENANTS" ]; then
+            echo "Keine Premium-Tenants konfiguriert. Überspringe Premium-Builds."
+            exit 0
+          fi
+          
+          # Teile die Liste in einzelne Vereine auf
+          IFS=',' read -ra TENANT_ARRAY <<< "$TENANTS"
+          
+          for tenant in "${TENANT_ARRAY[@]}"; do
+            tenant=$(echo "$tenant" | xargs) # Trim whitespace
+            if [ -n "$tenant" ]; then
+              echo "Building APK for Premium Tenant: $tenant"
+              flutter build apk --release \
+                --dart-define=IS_PREMIUM=true \
+                --dart-define=VEREIN_NAME="$tenant" \
+                --build-name="$tenant" \
+                --build-number=1
+              
+              # Benenne die APK um, damit sie eindeutig ist
+              APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+              NEW_APK_PATH="build/app/outputs/flutter-apk/app-$tenant-release.apk"
+              if [ -f "$APK_PATH" ]; then
+                mv "$APK_PATH" "$NEW_APK_PATH"
+                echo "APK umbenannt zu: $NEW_APK_PATH"
+              fi
+            fi
+          done
+
+      - name: Build Flutter Android App Bundle (Premium - Pro Verein)
+        working-directory: ./vereinshub_frontend
+        run: |
+          export PATH="$HOME/flutter/bin:$PATH"
+          TENANTS="${{ steps.premium-tenants.outputs.tenants }}"
+          
+          if [ -z "$TENANTS" ]; then
+            echo "Keine Premium-Tenants konfiguriert. Überspringe Premium-Builds."
+            exit 0
+          fi
+          
+          # Teile die Liste in einzelne Vereine auf
+          IFS=',' read -ra TENANT_ARRAY <<< "$TENANTS"
+          
+          for tenant in "${TENANT_ARRAY[@]}"; do
+            tenant=$(echo "$tenant" | xargs) # Trim whitespace
+            if [ -n "$tenant" ]; then
+              echo "Building App Bundle for Premium Tenant: $tenant"
+              flutter build appbundle --release \
+                --dart-define=IS_PREMIUM=true \
+                --dart-define=VEREIN_NAME="$tenant" \
+                --build-name="$tenant" \
+                --build-number=1
+              
+              # Benenne das AAB um, damit es eindeutig ist
+              AAB_PATH="build/app/outputs/bundle/release/app-release.aab"
+              NEW_AAB_PATH="build/app/outputs/bundle/release/app-$tenant-release.aab"
+              if [ -f "$AAB_PATH" ]; then
+                mv "$AAB_PATH" "$NEW_AAB_PATH"
+                echo "AAB umbenannt zu: $NEW_AAB_PATH"
+              fi
+            fi
+          done
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
@@ -84,5 +159,6 @@ jobs:
             vereinshub_frontend/build/app/outputs/flutter-apk/*.apk
             vereinshub_frontend/build/app/outputs/bundle/*.aab
           retention-days: 7
+          if-no-files-found: warn
 
 

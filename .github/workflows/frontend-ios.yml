@@ -45,6 +45,25 @@ jobs:
           sudo gem install cocoapods
           pod setup
 
+      - name: Get Premium Tenants
+        id: premium-tenants
+        run: |
+          # Liste der Premium-Vereine (schema_name oder tenant.name)
+          # Diese Liste kann manuell gepflegt werden oder über API geholt werden
+          # Format: "verein1,verein2,verein3"
+          PREMIUM_TENANTS="${PREMIUM_TENANTS:-}"
+          
+          # Falls PREMIUM_TENANTS nicht gesetzt ist, verwende leere Liste
+          if [ -z "$PREMIUM_TENANTS" ]; then
+            echo "Keine Premium-Tenants konfiguriert. Verwende leere Liste."
+            echo "tenants=" >> $GITHUB_OUTPUT
+          else
+            echo "Premium-Tenants: $PREMIUM_TENANTS"
+            echo "tenants=$PREMIUM_TENANTS" >> $GITHUB_OUTPUT
+          fi
+        env:
+          PREMIUM_TENANTS: ${{ secrets.PREMIUM_TENANTS || '' }}
+
       - name: Build Flutter iOS (Standard)
         working-directory: ./vereinshub_frontend
         run: |
@@ -52,11 +71,38 @@ jobs:
           flutter pub get
           flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=false
 
-      - name: Build Flutter iOS (Premium)
+      - name: Build Flutter iOS (Premium - Pro Verein)
         working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
-          flutter build ios --release --no-codesign --dart-define=IS_PREMIUM=true
+          TENANTS="${{ steps.premium-tenants.outputs.tenants }}"
+          
+          if [ -z "$TENANTS" ]; then
+            echo "Keine Premium-Tenants konfiguriert. Überspringe Premium-Builds."
+            exit 0
+          fi
+          
+          # Teile die Liste in einzelne Vereine auf
+          IFS=',' read -ra TENANT_ARRAY <<< "$TENANTS"
+          
+          for tenant in "${TENANT_ARRAY[@]}"; do
+            tenant=$(echo "$tenant" | xargs) # Trim whitespace
+            if [ -n "$tenant" ]; then
+              echo "Building iOS for Premium Tenant: $tenant"
+              flutter build ios --release --no-codesign \
+                --dart-define=IS_PREMIUM=true \
+                --dart-define=VEREIN_NAME="$tenant" \
+                --build-name="$tenant" \
+                --build-number=1
+              
+              # Kopiere die App in einen tenant-spezifischen Ordner
+              if [ -d "build/ios/iphoneos/Runner.app" ]; then
+                mkdir -p "build/ios/iphoneos/$tenant"
+                cp -r "build/ios/iphoneos/Runner.app" "build/ios/iphoneos/$tenant/Runner.app"
+                echo "iOS App kopiert zu: build/ios/iphoneos/$tenant/Runner.app"
+              fi
+            fi
+          done
 
       - name: Upload iOS artifacts
         uses: actions/upload-artifact@v4
@@ -64,6 +110,8 @@ jobs:
           name: ios-builds
           path: |
             vereinshub_frontend/build/ios/iphoneos/Runner.app
+            vereinshub_frontend/build/ios/iphoneos/*/Runner.app
           retention-days: 7
+          if-no-files-found: warn
 
 
