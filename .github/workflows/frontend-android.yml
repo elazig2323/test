@@ -96,6 +96,14 @@ jobs:
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
           flutter build apk --release --dart-define=IS_PREMIUM=false --no-tree-shake-icons
+          
+          # Benenne die Standard-APK um, damit sie nicht von Premium-Builds überschrieben wird
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          STANDARD_APK_PATH="build/app/outputs/flutter-apk/app-standard-release.apk"
+          if [ -f "$APK_PATH" ]; then
+            mv "$APK_PATH" "$STANDARD_APK_PATH"
+            echo "Standard-APK umbenannt zu: $STANDARD_APK_PATH"
+          fi
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
 
@@ -104,6 +112,14 @@ jobs:
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter build appbundle --release --dart-define=IS_PREMIUM=false --no-tree-shake-icons
+          
+          # Benenne das Standard-AAB um, damit es nicht von Premium-Builds überschrieben wird
+          AAB_PATH="build/app/outputs/bundle/release/app-release.aab"
+          STANDARD_AAB_PATH="build/app/outputs/bundle/release/app-standard-release.aab"
+          if [ -f "$AAB_PATH" ]; then
+            mv "$AAB_PATH" "$STANDARD_AAB_PATH"
+            echo "Standard-AAB umbenannt zu: $STANDARD_AAB_PATH"
+          fi
         env:
           GRADLE_OPTS: "-Dorg.gradle.daemon=true -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
 
