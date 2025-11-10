@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - dev
       - master
   pull_request:
     branches:
       - main
       - develop
+      - dev
       - master
   workflow_dispatch:
 
@@ -28,9 +30,16 @@ jobs:
     steps:
       - name: Checkout backend from Bitbucket
         run: |
-          git clone -b dev https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinhub_backend.git vereinhub_backend
+          echo "Cloning backend from Bitbucket dev branch..."
+          git clone -b dev --depth 1 https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinhub_backend.git vereinhub_backend
+          echo "Current branch in cloned repo:"
+          cd vereinhub_backend
+          git branch -a
+          git log -1 --oneline
           echo "Checking for Dockerfile..."
-          ls -la vereinhub_backend/Dockerfile || echo "Dockerfile not found"
+          ls -la Dockerfile || echo "Dockerfile not found"
+          echo "Checking settings.py for ALLOWED_HOSTS:"
+          grep -A 5 "ALLOWED_HOSTS" vereinsmangament/settings.py || echo "settings.py not found"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -105,7 +114,7 @@ jobs:
             # Pull neues Docker Image
             docker-compose pull clubsmarter_backend || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
             
-            # Starte Container neu (mit --force-recreate um neues Image zu verwenden)
+            # Starte Container neu
             docker-compose up -d --force-recreate clubsmarter_backend || docker-compose restart clubsmarter_backend
             
             # Prüfe Container-Status
