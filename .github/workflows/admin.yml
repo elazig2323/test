@@ -112,8 +112,8 @@ jobs:
             # Pull neues Docker Image
             docker-compose pull clubsmarter_admin || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-admin:latest
             
-            # Starte Container neu
-            docker-compose up -d clubsmarter_admin || docker-compose restart clubsmarter_admin
+            # Starte Container neu (mit --force-recreate um neues Image zu verwenden)
+            docker-compose up -d --force-recreate clubsmarter_admin || docker-compose restart clubsmarter_admin
             
             # Prüfe Container-Status
             docker-compose ps clubsmarter_admin

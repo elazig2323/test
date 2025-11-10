@@ -105,8 +105,8 @@ jobs:
             # Pull neues Docker Image
             docker-compose pull clubsmarter_backend || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
             
-            # Starte Container neu
-            docker-compose up -d clubsmarter_backend || docker-compose restart clubsmarter_backend
+            # Starte Container neu (mit --force-recreate um neues Image zu verwenden)
+            docker-compose up -d --force-recreate clubsmarter_backend || docker-compose restart clubsmarter_backend
             
             # Prüfe Container-Status
             docker-compose ps clubsmarter_backend

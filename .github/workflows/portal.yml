@@ -115,8 +115,8 @@ jobs:
             # Pull neues Docker Image
             docker-compose pull clubsmarter_portal || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-portal:latest
             
-            # Starte Container neu
-            docker-compose up -d clubsmarter_portal || docker-compose restart clubsmarter_portal
+            # Starte Container neu (mit --force-recreate um neues Image zu verwenden)
+            docker-compose up -d --force-recreate clubsmarter_portal || docker-compose restart clubsmarter_portal
             
             # Prüfe Container-Status
             docker-compose ps clubsmarter_portal
