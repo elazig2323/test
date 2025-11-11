@@ -53,7 +53,7 @@ jobs:
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
-          flutter build web --release --dart-define=IS_PREMIUM=false
+          flutter build web --release --dart-define=IS_PREMIUM=false --dart-define=IS_PROD=true
 
       - name: Build Docker image (Standard)
         working-directory: ./vereinshub_frontend
@@ -115,7 +115,7 @@ jobs:
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
-          flutter build web --release --dart-define=IS_PREMIUM=true
+          flutter build web --release --dart-define=IS_PREMIUM=true --dart-define=IS_PROD=true
 
       - name: Build Docker image (Premium)
         working-directory: ./vereinshub_frontend
