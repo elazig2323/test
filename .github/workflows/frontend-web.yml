@@ -146,4 +146,75 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:${{ github.sha }}
 
+  deploy-standard:
+    name: Deploy Frontend (Standard)
+    needs: build-standard
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_SERVER_HOST }}
+          username: ${{ secrets.DEPLOY_SERVER_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SERVER_PORT || 22 }}
+          script: |
+            # Login zu GitHub Container Registry
+            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            
+            # Wechsle ins Projektverzeichnis
+            cd ${{ secrets.DEPLOY_PROJECT_PATH || '/opt/clubsmarter' }}
+            
+            # Pull neues Docker Image
+            docker-compose pull clubsmarter_frontend || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest
+            
+            # Stoppe und entferne den alten Container, damit das neue Image verwendet wird
+            docker-compose stop clubsmarter_frontend || true
+            docker-compose rm -f clubsmarter_frontend || true
+            
+            # Erstelle und starte Container neu mit dem neuen Image
+            docker-compose up -d --force-recreate --no-deps clubsmarter_frontend
+            
+            # Prüfe Container-Status und verwendetes Image
+            docker-compose ps clubsmarter_frontend
+            docker inspect clubsmarter_frontend --format='Verwendetes Image: {{.Config.Image}}' || true
+            
+            echo "✅ Frontend (Standard) erfolgreich deployed!"
+
+  deploy-premium:
+    name: Deploy Frontend (Premium)
+    needs: build-premium
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_SERVER_HOST }}
+          username: ${{ secrets.DEPLOY_SERVER_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SERVER_PORT || 22 }}
+          script: |
+            # Login zu GitHub Container Registry
+            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            
+            # Wechsle ins Projektverzeichnis
+            cd ${{ secrets.DEPLOY_PROJECT_PATH || '/opt/clubsmarter' }}
+            
+            # Pull neues Docker Image
+            docker-compose pull clubsmarter_frontend_premium || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest
+            
+            # Stoppe und entferne den alten Container, damit das neue Image verwendet wird
+            docker-compose stop clubsmarter_frontend_premium || true
+            docker-compose rm -f clubsmarter_frontend_premium || true
+            
+            # Erstelle und starte Container neu mit dem neuen Image
+            docker-compose up -d --force-recreate --no-deps clubsmarter_frontend_premium
+            
+            # Prüfe Container-Status und verwendetes Image
+            docker-compose ps clubsmarter_frontend_premium
+            docker inspect clubsmarter_frontend_premium --format='Verwendetes Image: {{.Config.Image}}' || true
+            
+            echo "✅ Frontend (Premium) erfolgreich deployed!"
 
