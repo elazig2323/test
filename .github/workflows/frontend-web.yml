@@ -22,8 +22,10 @@ env:
   IMAGE_NAME: ${{ github.repository_owner }}/clubsmarter
 
 jobs:
-  build-standard:
-    name: Build Frontend (Web - Standard)
+  # Build Frontend - Ein Build für alle (Standard UND Premium)
+  # Das Frontend erkennt Subdomains zur Laufzeit automatisch
+  build-frontend:
+    name: Build Frontend (Web - Alle Tenants)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout frontend from Bitbucket
@@ -48,19 +50,19 @@ jobs:
           flutter --version
           flutter doctor --no-android || true
 
-      - name: Build Flutter Web (Standard)
+      - name: Build Flutter Web
         working-directory: ./vereinshub_frontend
         run: |
           export PATH="$HOME/flutter/bin:$PATH"
           flutter pub get
+          # IS_PREMIUM=false, da zur Laufzeit automatisch erkannt wird
           flutter build web --release --dart-define=IS_PREMIUM=false --dart-define=IS_PROD=true
 
-      - name: Build Docker image (Standard)
+      - name: Build Docker image
         working-directory: ./vereinshub_frontend
         run: |
-          docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest .
-          docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release \
+          docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release --build-arg IS_PROD=true \
+            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:${{ github.sha }} .
 
       - name: Log in to GitHub Container Registry
@@ -84,71 +86,10 @@ jobs:
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:${{ github.sha }}
 
-  build-premium:
-    name: Build Frontend (Web - Premium)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout frontend from Bitbucket
-        run: |
-          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/vereinshub/vereinshub_frontend.git vereinshub_frontend
-
-      - name: Cache Flutter
-        uses: actions/cache@v3
-        with:
-          path: $HOME/flutter
-          key: flutter-stable-${{ runner.os }}
-          restore-keys: |
-            flutter-stable-
-
-      - name: Install Flutter
-        run: |
-          if [ ! -d "$HOME/flutter" ]; then
-            git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
-          fi
-          echo "$HOME/flutter/bin" >> $GITHUB_PATH
-          export PATH="$HOME/flutter/bin:$PATH"
-          flutter --version
-          flutter doctor --no-android || true
-
-      - name: Build Flutter Web (Premium)
-        working-directory: ./vereinshub_frontend
-        run: |
-          export PATH="$HOME/flutter/bin:$PATH"
-          flutter pub get
-          flutter build web --release --dart-define=IS_PREMIUM=true --dart-define=IS_PROD=true
-
-      - name: Build Docker image (Premium)
-        working-directory: ./vereinshub_frontend
-        run: |
-          docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest .
-          docker build --build-arg IS_PREMIUM=true --build-arg BUILD_MODE=release \
-            -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:${{ github.sha }} .
-
-      - name: Log in to GitHub Container Registry
-        if: github.event_name != 'pull_request' && env.REGISTRY == 'ghcr.io'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
-
-      - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Push Docker image
-        if: github.event_name != 'pull_request'
-        run: |
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:${{ github.sha }}
-
-  deploy-standard:
-    name: Deploy Frontend (Standard)
-    needs: build-standard
+  # Deploy Frontend - Ein Deployment für alle Tenants
+  deploy-frontend:
+    name: Deploy Frontend (Alle Tenants)
+    needs: build-frontend
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
@@ -169,52 +110,18 @@ jobs:
             # Pull neues Docker Image
             docker-compose pull clubsmarter_frontend || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest
             
-            # Stoppe und entferne den alten Container, damit das neue Image verwendet wird
+            # Stoppe und entferne den alten Container
             docker-compose stop clubsmarter_frontend || true
             docker-compose rm -f clubsmarter_frontend || true
             
-            # Erstelle und starte Container neu mit dem neuen Image
+            # Erstelle und starte Container neu
             docker-compose up -d --force-recreate --no-deps clubsmarter_frontend
             
-            # Prüfe Container-Status und verwendetes Image
+            # Prüfe Container-Status
             docker-compose ps clubsmarter_frontend
             docker inspect clubsmarter_frontend --format='Verwendetes Image: {{.Config.Image}}' || true
             
-            echo "✅ Frontend (Standard) erfolgreich deployed!"
-
-  deploy-premium:
-    name: Deploy Frontend (Premium)
-    needs: build-premium
-    runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    steps:
-      - name: Deploy to server
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.DEPLOY_SERVER_HOST }}
-          username: ${{ secrets.DEPLOY_SERVER_USER }}
-          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-          port: ${{ secrets.DEPLOY_SERVER_PORT || 22 }}
-          script: |
-            # Login zu GitHub Container Registry
-            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
-            
-            # Wechsle ins Projektverzeichnis
-            cd ${{ secrets.DEPLOY_PROJECT_PATH || '/opt/clubsmarter' }}
-            
-            # Pull neues Docker Image
-            docker-compose pull clubsmarter_frontend_premium || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-premium:latest
-            
-            # Stoppe und entferne den alten Container, damit das neue Image verwendet wird
-            docker-compose stop clubsmarter_frontend_premium || true
-            docker-compose rm -f clubsmarter_frontend_premium || true
-            
-            # Erstelle und starte Container neu mit dem neuen Image
-            docker-compose up -d --force-recreate --no-deps clubsmarter_frontend_premium
-            
-            # Prüfe Container-Status und verwendetes Image
-            docker-compose ps clubsmarter_frontend_premium
-            docker inspect clubsmarter_frontend_premium --format='Verwendetes Image: {{.Config.Image}}' || true
-            
-            echo "✅ Frontend (Premium) erfolgreich deployed!"
-
+            echo "✅ Frontend erfolgreich deployed!"
+            echo "📝 Hinweis: Das Frontend erkennt Subdomains zur Laufzeit automatisch."
+            echo "   - Standard-Tenants: web.clubsmarter.de/tenant-id/..."
+            echo "   - Premium-Tenants: tenant.clubsmarter.de (automatisch erkannt)"
