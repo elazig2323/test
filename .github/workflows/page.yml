@@ -29,31 +29,21 @@ jobs:
     steps:
       - name: Checkout clubsmarter_page from Bitbucket
         run: |
-          echo "Cloning clubsmarter_page from Bitbucket (master branch)..."
           git clone -b master https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/${{ env.BITBUCKET_WORKSPACE }}/clubsmarter_page.git clubsmarter_page
-          echo "Checking cloned repository..."
-          cd clubsmarter_page
-          echo "Current branch:"
-          git branch -a
-          echo "Listing all files:"
-          ls -la
+          ls -la clubsmarter_page/
           echo "Checking for Dockerfile..."
-          if [ -f Dockerfile ]; then
-            echo "✅ Dockerfile found!"
-          else
-            echo "❌ Dockerfile NOT found!"
-            echo "Repository contents:"
-            find . -type f -not -path './.git/*' | head -20
-            exit 1
-          fi
+          ls -la clubsmarter_page/Dockerfile || echo "Dockerfile not found in root"
 
       - name: Build Docker image
-        working-directory: ./clubsmarter_page
         run: |
           echo "Current directory: $(pwd)"
-          echo "Listing files:"
+          echo "Listing clubsmarter_page directory:"
+          ls -la clubsmarter_page/ | head -20
+          echo "Checking for Dockerfile:"
+          test -f clubsmarter_page/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
+          cd clubsmarter_page
+          pwd
           ls -la | head -20
-          echo "Building Docker image..."
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:latest .
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:${{ github.sha }} .
 
