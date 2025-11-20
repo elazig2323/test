@@ -1,0 +1,105 @@
+name: Landing Page CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - master
+    paths:
+      - 'clubsmarter_page/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - master
+    paths:
+      - 'clubsmarter_page/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/clubsmarter
+
+jobs:
+  build:
+    name: Build Landing Page
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing clubsmarter_page directory:"
+          ls -la clubsmarter_page/ | head -20
+          echo "Checking for Dockerfile:"
+          test -f clubsmarter_page/Dockerfile && echo "Dockerfile found!" || echo "Dockerfile NOT found!"
+          cd clubsmarter_page
+          pwd
+          ls -la | head -20
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:latest .
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:${{ github.sha }} .
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request' && env.REGISTRY == 'ghcr.io'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request' && env.REGISTRY == 'docker.io'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Docker image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:latest
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:${{ github.sha }}
+
+  deploy:
+    name: Deploy Landing Page
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.DEPLOY_SERVER_HOST }}
+          username: ${{ secrets.DEPLOY_SERVER_USER }}
+          key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.DEPLOY_SERVER_PORT || 22 }}
+          script: |
+            # Login zu GitHub Container Registry
+            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            
+            # Wechsle ins Projektverzeichnis
+            cd ${{ secrets.DEPLOY_PROJECT_PATH || '/opt/clubsmarter' }}
+            
+            # Pull neues Docker Image
+            docker-compose pull clubsmarter_page || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-page:latest
+            
+            # Stoppe und entferne den alten Container, damit das neue Image verwendet wird
+            docker-compose stop clubsmarter_page || true
+            docker-compose rm -f clubsmarter_page || true
+            
+            # Erstelle und starte Container neu mit dem neuen Image (--force-recreate stellt sicher, dass Container neu erstellt wird)
+            docker-compose up -d --force-recreate --no-deps clubsmarter_page
+            
+            # Prüfe Container-Status und verwendetes Image
+            docker-compose ps clubsmarter_page
+            docker inspect clubsmarter_page --format='Verwendetes Image: {{.Config.Image}}' || true
+            
+            echo "✅ Landing Page erfolgreich deployed!"
+
