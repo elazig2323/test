@@ -6,15 +6,11 @@ on:
       - main
       - develop
       - master
-    paths:
-      - 'clubsmarter_page/**'
   pull_request:
     branches:
       - main
       - develop
       - master
-    paths:
-      - 'clubsmarter_page/**'
   workflow_dispatch:
 
 permissions:
@@ -24,14 +20,21 @@ permissions:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository_owner }}/clubsmarter
+  BITBUCKET_WORKSPACE: ${{ secrets.BITBUCKET_WORKSPACE || 'vereinshub' }}
 
 jobs:
   build:
     name: Build Landing Page
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout clubsmarter_page from Bitbucket
+        run: |
+          git clone -b ${GITHUB_REF#refs/heads/} https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/${{ env.BITBUCKET_WORKSPACE }}/clubsmarter_page.git clubsmarter_page || \
+          git clone -b main https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/${{ env.BITBUCKET_WORKSPACE }}/clubsmarter_page.git clubsmarter_page || \
+          git clone -b master https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/${{ env.BITBUCKET_WORKSPACE }}/clubsmarter_page.git clubsmarter_page
+          ls -la clubsmarter_page/
+          echo "Checking for Dockerfile..."
+          ls -la clubsmarter_page/Dockerfile || echo "Dockerfile not found in root"
 
       - name: Build Docker image
         run: |
