@@ -106,21 +106,69 @@ jobs:
           port: ${{ secrets.DEPLOY_SERVER_PORT || 22 }}
           script: |
             # Login zu GitHub Container Registry
-            echo "${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || true
+            # Versuche zuerst GHCR_TOKEN, dann GITHUB_TOKEN, sonst versuche ohne Login (nur wenn Image öffentlich)
+            GHCR_TOKEN="${{ secrets.GHCR_TOKEN }}"
+            GITHUB_TOKEN="${{ secrets.GITHUB_TOKEN }}"
+            
+            if [ -n "$GHCR_TOKEN" ]; then
+              echo "$GHCR_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || echo "⚠️ Login mit GHCR_TOKEN fehlgeschlagen"
+            elif [ -n "$GITHUB_TOKEN" ]; then
+              echo "$GITHUB_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin || echo "⚠️ Login mit GITHUB_TOKEN fehlgeschlagen"
+            else
+              echo "⚠️ Kein GHCR_TOKEN oder GITHUB_TOKEN gefunden. Versuche Image ohne Login zu pullen (nur wenn öffentlich)..."
+            fi
             
             # Wechsle ins Projektverzeichnis
             cd ${{ secrets.DEPLOY_PROJECT_PATH || '/opt/clubsmarter' }}
             
-            # Pull neues Docker Image
+            # Pull neues Docker Image (mit --ignore-pull-failures falls Image noch nicht existiert)
             docker-compose pull clubsmarter_backend || docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
             
-            # Starte Container neu
-            docker-compose up -d --force-recreate clubsmarter_backend || docker-compose restart clubsmarter_backend
+            # Stoppe und entferne den alten Container, damit das neue Image verwendet wird
+            docker-compose stop clubsmarter_backend || true
+            docker-compose rm -f clubsmarter_backend || true
+            
+            # Erstelle und starte Container neu mit dem neuen Image (--force-recreate stellt sicher, dass Container neu erstellt wird)
+            docker-compose up -d --force-recreate --no-deps clubsmarter_backend
+            
+            # Warte kurz, bis der Container bereit ist
+            echo "Warte auf Container-Start..."
+            sleep 10
+            
+            # Führe Datenbank-Migrationen aus
+            echo "🔄 Führe Datenbank-Migrationen aus..."
+            docker-compose exec -T clubsmarter_backend python manage.py migrate
+            docker-compose exec -T clubsmarter_backend python manage.py migrate_schemas --shared
+            
+            # Test: Prüfe ob Migrationen erfolgreich waren
+            echo "🧪 Teste Migrationen..."
+            
+            # Prüfe Migration-Status (sollte keine unapplied migrations zeigen)
+            MIGRATION_STATUS=$(docker-compose exec -T clubsmarter_backend python manage.py showmigrations --plan 2>&1)
+            if echo "$MIGRATION_STATUS" | grep -q "\[ \]"; then
+              echo "❌ FEHLER: Es gibt noch nicht angewendete Migrationen!"
+              echo "$MIGRATION_STATUS"
+              exit 1
+            else
+              echo "✅ Alle Migrationen wurden erfolgreich angewendet"
+            fi
+            
+            # Prüfe Django-Konfiguration und Datenbank-Verbindung
+            echo "🧪 Teste Django-Konfiguration und Datenbank..."
+            docker-compose exec -T clubsmarter_backend python manage.py check --database default || {
+              echo "❌ FEHLER: Django check fehlgeschlagen!"
+              exit 1
+            }
+            echo "✅ Django-Konfiguration und Datenbank-Verbindung OK"
             
             # Prüfe Container-Status
             docker-compose ps clubsmarter_backend
             
-            echo "✅ Backend erfolgreich deployed!"
+            # Zeige Image-Version zur Bestätigung
+            echo "Verwendetes Image:"
+            docker inspect clubsmarter_backend --format='{{.Config.Image}}' || docker inspect clubsmarter_backend --format='{{.Image}}'
+            
+            echo "✅ Backend erfolgreich deployed und migriert!"
 
 
 
