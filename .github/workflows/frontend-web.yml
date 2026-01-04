@@ -47,6 +47,8 @@ jobs:
           fi
           echo "$HOME/flutter/bin" >> $GITHUB_PATH
           export PATH="$HOME/flutter/bin:$PATH"
+          # Use Flutter 3.24.5 to match Docker container (requires intl 0.20.2)
+          cd $HOME/flutter && git checkout 3.24.5 && cd -
           flutter --version
           flutter doctor --no-android || true
 
