@@ -69,7 +69,7 @@ jobs:
       - name: Build Docker image
         working-directory: ./vereinshub_frontend
         run: |
-          docker build --build-arg IS_PREMIUM=false --build-arg BUILD_MODE=release --build-arg IS_PROD=true \
+          docker build \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:latest \
             -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend-standard:${{ github.sha }} .
 
