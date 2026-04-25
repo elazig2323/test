@@ -40,6 +40,10 @@ jobs:
           flutter --version
           flutter doctor --no-android || true
 
+      - name: Configure Git to use Bitbucket Credentials
+        run: |
+          git config --global url."https://${{ secrets.BITBUCKET_USERNAME }}:${{ secrets.BITBUCKET_APP_PASSWORD }}@bitbucket.org/".insteadOf "git@bitbucket.org:"
+
       - name: Install CocoaPods
         run: |
           sudo gem install cocoapods
